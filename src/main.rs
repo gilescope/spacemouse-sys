@@ -27,6 +27,8 @@ const kConnexionMaskAllButtons: u32 = 0xFFFFFFFF;
 const kConnexionDeviceStateType: u32 = 0x4D53; // 'MS' (Connexion State)
 const kConnexionDeviceStateVers: u32 = 0x6D33; // 'm3' (version 3 includes 32-bit button data in previously unused field, binary compatible with version 2)
 
+const kConnexionClientWildcard: u32 = 0x2A2A2A2A;
+
 //#define kConnexionCtlSetSwitches		'3dss'		// set the current state of the client-controlled feature switches (bitmap, see masks below)
 // = 862221171 as u32
 
@@ -137,17 +139,18 @@ fn main() {
             removed,         // as *const fn(usize),
             true,
         );
-        
+
         println!(
             "SetConnexionHandlers res {} should probably return 0",
             set_res
         );
 
         client_id = RegisterConnexionClient(
-            0,
-            //NULL as *const u8, 
-            EXE_NAME as *const u8, // Any exe has focus grab the input still
-            kConnexionClientModePlugin, //kConnexionClientModeTakeOver,
+            kConnexionClientWildcard,
+            //NULL as *const u8,
+            0 as *const u8, // Any exe has focus grab the input still
+            //kConnexionClientModePlugin,
+            kConnexionClientModeTakeOver,
             kConnexionMaskAll,
         );
         if client_id == 0 {
@@ -171,9 +174,9 @@ fn main() {
         // let res = ConnexionGetCurrentDevicePrefs(client_id, &prefs);
         // println!("res {}", res);
 
-    //     	func openPreferencesPane() -> Void{
-	// 	ConnexionClientControl(ClientId, ConnexionClient.Ctrl.OpenPrefPane, 0, nil)
-	// }
+        //     	func openPreferencesPane() -> Void{
+        // 	ConnexionClientControl(ClientId, ConnexionClient.Ctrl.OpenPrefPane, 0, nil)
+        // }
     }
 
     std::thread::sleep(std::time::Duration::from_secs(1));
@@ -184,6 +187,7 @@ fn main() {
     println!("fin");
     unsafe {
         UnregisterConnexionClient(client_id);
+        CleanupConnexionHandlers();
     }
 }
 
@@ -197,7 +201,7 @@ extern "C" {
         separare_thread: bool,
     ) -> u16;
 
-    fn RegisterConnexionClient(signature: u16, name: *const u8, mode: u16, mask: u32) -> u16; //client_id
+    fn RegisterConnexionClient(signature: u32, name: *const u8, mode: u16, mask: u32) -> u16; //client_id
 
     fn UnregisterConnexionClient(client_id: u16);
 
@@ -207,4 +211,5 @@ extern "C" {
 
     fn ConnexionGetCurrentDevicePrefs(productID: u32, prefs: *mut ConnexionDevicePrefs) -> u16;
 
+    fn CleanupConnexionHandlers();
 }
